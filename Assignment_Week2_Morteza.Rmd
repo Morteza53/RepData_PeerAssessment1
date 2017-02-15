@@ -1,0 +1,92 @@
+---
+title: "Assignment_Week2_Morteza"
+author: "Morteza"
+date: "February 13, 2017"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+Part 1: Loading and preprocessing the data:
+
+```{r}
+library(ggplot2)
+activity<-read.csv("./activity.csv", header = TRUE)
+str(activity)
+```
+
+Part 2: What is mean total number of steps taken per day?
+```{r}
+agg_activity_mean<-aggregate(steps~date,activity,mean)
+agg_activity_mean
+```
+Calculate the total number of steps taken per day?
+
+```{r}
+agg_activity_sum<-aggregate(steps~date,activity,sum)
+agg_activity_sum
+```
+
+Make a histogram of the total number of steps taken each day?
+
+```{r}
+g<-ggplot(data=agg_activity_sum, aes(steps))
+g+geom_histogram(breaks=seq(0,21200, by=2050), col="red", fill="green", alpha=0.2)
+```
+
+Calculate and report the mean and median of the total number of steps taken per day?
+```{r}
+summary(agg_activity_sum)
+```
+
+Part 3: What is the average daily activity pattern?
+
+Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r}
+agg_activity_interval<-aggregate(steps~interval, activity, mean)
+g<-ggplot(data=agg_activity_interval, aes(interval,steps))
+g+geom_line()+labs(x="5 Minutes Interval", y="Average Number of Steps taken",title="Average Number of Steps per Each Interval")+theme(plot.title = element_text(hjust = 0.5))+scale_x_continuous(breaks = seq(0,3000,by=500))
+```
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r}
+agg_activity_interval[which.max(agg_activity_interval$steps),]
+```
+
+Part 4: Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r}
+sapply(activity,function(x)sum(is.na(x)))
+```
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+My strategy for imputing missing values in Activity dataset is replacing them by the average of number of steps during the same interval acress all days,i.e., by using the steps' values in agg_activity_interval.
+```{r}
+activity_Missing_Imputed<-activity
+for (i in 1:dim(activity_Missing_Imputed)[1])
+if (is.na(activity_Missing_Imputed[i,1]))
+activity_Missing_Imputed[i,1]=agg_activity_interval[which(agg_activity_interval[,1]==activity_Missing_Imputed[i,3]),2]
+sapply(activity_Missing_Imputed,function(x)sum(is.na(x)))
+```
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+```{r}
+agg_activity_sum_2<-aggregate(steps~date,activity_Missing_Imputed,sum)
+summary(agg_activity_sum_2)
+g<-ggplot(data=agg_activity_sum_2, aes(steps))
+g+geom_histogram(breaks=seq(0,21200, by=2050), col="red", fill="green", alpha=0.2)
+```
+
+Part 5: Are there differences in activity patterns between weekdays and weekends?
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+```{r}
+library(plyr);library(dplyr)
+activity_Missing_Imputed$day<-weekdays(as.Date(activity_Missing_Imputed$date))
+activity_Missing_Imputed$day_cat<-mapvalues(activity_Missing_Imputed$day, from = c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"),to=c("weekday","weekday","weekday","weekday","weekday","weekend","weekend"))
+agg_activity_interval_2<-aggregate(steps~interval+day_cat, activity_Missing_Imputed, mean)
+g<-ggplot(data=agg_activity_interval_2, aes(interval,steps))
+g+geom_line()+facet_grid(day_cat~., margins = TRUE)+labs(x="5 Minutes Interval", y="Average Number of Steps taken",title="Average Number of Steps per Each Interval")+theme(plot.title = element_text(hjust = 0.5))+scale_x_continuous(breaks = seq(0,3000,by=500))
+```
+
+
+
+
+
